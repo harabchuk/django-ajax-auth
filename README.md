@@ -1,6 +1,7 @@
 django-ajax-auth
 ================
-This application provides simple Django authentication via AJAX calls. To include it in your application, checkout the project and add ```ajax_auth``` to your INSTALLED_APPS. See the example project fo full usage.
+This application provides simple Django authentication via AJAX calls. To include it in your application, 
+install it with pip ```pip install -e git+https://github.com/FrancoAA/django-ajax-auth.git#egg=django_ajax_auth``` and add ```ajax_auth``` to your INSTALLED_APPS. See the example project fo full usage.
 
 ### Sample Usage
 ##### Login
