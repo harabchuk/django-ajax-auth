@@ -22,15 +22,17 @@ CLASSIFIERS = [
 ]
 
 setup(
-      name='django-ajax-auth',
-      author = 'Original author amenon, modified by FrancoAA',
-      version = '',
-      description = 'This application provides simple Django authentication via AJAX calls. To include it in your application, checkout the project and add ajax_auth to your INSTALLED_APPS. See the example project fo full usage.',
-      long_description = open(os.path.join(os.path.dirname(__file__), 'README.md')).read(),
-      keywords = 'django ajax auth',
-      url = 'https://github.com/FrancoAA/django-ajax-auth/new/master',
-      license = 'Apache v2',
-      platforms = ['OS Independent'],
-      classifiers = CLASSIFIERS,
-      packages = find_packages(),
+    name='django-ajax-auth',
+    author='Original author amenon, modified by FrancoAA and harabchuk',
+    version='',
+    description='This application provides simple Django authentication via AJAX calls. '
+                'To include it in your application, checkout the project and add ajax_auth '
+                'to your INSTALLED_APPS. See the example project fo full usage.',
+    long_description=open(os.path.join(os.path.dirname(__file__), 'README.md')).read(),
+    keywords='django ajax auth',
+    url='https://github.com/harabchuk/django-ajax-auth/new/master',
+    license='Apache v2',
+    platforms=['OS Independent'],
+    classifiers=CLASSIFIERS,
+    packages=find_packages(),
 )

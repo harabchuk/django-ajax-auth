@@ -4,6 +4,14 @@ from django.db import IntegrityError
 
 from django.http import HttpResponse, HttpResponseForbidden, HttpResponseBadRequest
 from django.views.generic import View
+from django.utils.translation import ugettext_lazy as _
+from django.core.validators import EmailValidator
+from django.core.exceptions import ValidationError
+
+import logging
+
+log = logging.getLogger(__name__)
+
 
 try:
     # Django 1.5 and higher supports overriding the default User model
@@ -13,9 +21,7 @@ except ImportError:
 
     def get_user_model():
         """
-        Return the default User class (for Django < 1.5
-
-        :return:
+        Return the default User class (for Django < 1.5)
         """
         return User
 
@@ -28,30 +34,18 @@ class JSONResponseMixin(object):
     def render_to_json_response(self, context, response_class=HttpResponse):
         """
         Render the context to json
-
-        :param context:
-        :param response_class: Defaults to regular HttpResponse
-        :return:
         """
         return self.get_json_response(self.convert_context_to_json(context), response_class)
 
     def get_json_response(self, content, response_class, **httpresponse_kwargs):
         """
         Create the response object and set the response header
-
-        :param content:
-        :param response_class:
-        :param httpresponse_kwargs:
-        :return:
         """
         return response_class(content, content_type='application/json', **httpresponse_kwargs)
 
     def convert_context_to_json(self, context):
         """
         Convert the content to json
-
-        :param context:
-        :return:
         """
         return json.dumps(context)
 
@@ -63,15 +57,13 @@ class LoginView(JSONResponseMixin, View):
     """
 
     def post(self, *args, **kwargs):
-        """
 
-        :param args:
-        :param kwargs:
-        :return:
-        """
         context = {}
-        username = self.request.POST['username']
-        password = self.request.POST['password']
+        username = self.request.POST.get('username')
+        password = self.request.POST.get('password')
+
+        if not username:
+            log.warning('[LoginView] username is empty')
 
         user = authenticate(username=username, password=password)
         if user is not None:
@@ -82,11 +74,11 @@ class LoginView(JSONResponseMixin, View):
             else:
                 # Return a 'disabled account' error message
                 context['success'] = False
-                context['error_msg'] = 'User account has been disabled.'
+                context['error_msg'] = _('User account has been disabled')
         else:
             # Return an 'invalid login' error message.
             context['success'] = False
-            context['error_msg'] = 'Invalid username/password.'
+            context['error_msg'] = _('Invalid username/password')
 
         return self.render_to_json_response(context, HttpResponseForbidden)
 
@@ -97,12 +89,7 @@ class LogoutView(JSONResponseMixin, View):
     """
 
     def post(self, *args, **kwargs):
-        """
 
-        :param args:
-        :param kwargs:
-        :return:
-        """
         logout(self.request)
         return self.render_to_json_response({'success': True})
 
@@ -116,30 +103,55 @@ class RegisterView(JSONResponseMixin, View):
     """
 
     def post(self, *args, **kwargs):
-        """
 
-        :param args:
-        :param kwargs:
-        :return:
-        """
         context = {}
-        username = self.request.POST['username']
-        password = self.request.POST['password']
-        password_confirm = self.request.POST['password_confirm']
+        username = self.request.POST.get('username')
+        password = self.request.POST.get('password')
+        password_confirm = self.request.POST.get('password_confirm')
+
+        if not username:
+            log.warning('[RegisterView] username is empty')
 
         if password != password_confirm:
             context['success'] = False
-            context['error_msg'] = 'Password does not match the confirm password.'
+            context['error_msg'] = _('Password does not match the confirm password')
+            log.debug('[RegisterView] passwords don''t match')
             return self.render_to_json_response(context, HttpResponseBadRequest)
 
+        email = None
+        if self.is_valid_email(username):
+            email = username
+            username = self.user_name_from_email(username)
+
         try:
-            user = get_user_model().objects.create_user(username, password=password)
+            user = get_user_model().objects.create_user(username, password=password, email=email)
             user = authenticate(username=username, password=password)
             login(self.request, user)
             context['success'] = True
+            log.debug('[RegisterView] registered user {} successfully'.format(username))
             return self.render_to_json_response(context)
         except IntegrityError:
             # Return an 'invalid user' error message.
             context['success'] = False
-            context['error_msg'] = 'User already exists.'
+            context['error_msg'] = _('User already exists')
+            log.warning('[RegisterView] user {} already exists'.format(username))
             return self.render_to_json_response(context, HttpResponseBadRequest)
+
+    @staticmethod
+    def is_valid_email(email):
+        try:
+            EmailValidator()(email)
+            return True
+        except ValidationError:
+            return False
+
+    @staticmethod
+    def user_name_from_email(email, max_len=30):
+        if not email:
+            return
+        if len(email) < max_len:
+            return email
+        name = email.split('@')[0]
+        if len(name) < max_len:
+            return name
+        return email[:max_len]
