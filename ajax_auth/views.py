@@ -5,8 +5,7 @@ from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseForbidden, HttpResponseBadRequest
 from django.views.generic import View
 from django.utils.translation import ugettext_lazy as _
-from django.core.validators import EmailValidator
-from django.core.exceptions import ValidationError
+from .services import AuthHelper
 
 import logging
 
@@ -65,7 +64,9 @@ class LoginView(JSONResponseMixin, View):
         if not username:
             log.warning('[LoginView] username is empty')
 
-        user = authenticate(username=username, password=password)
+        normalized_username = AuthHelper.normalize_username(username)
+
+        user = authenticate(username=normalized_username, password=password)
         if user is not None:
             if user.is_active:
                 login(self.request, user)
@@ -119,9 +120,9 @@ class RegisterView(JSONResponseMixin, View):
             return self.render_to_json_response(context, HttpResponseBadRequest)
 
         email = None
-        if self.is_valid_email(username):
+        if AuthHelper.is_valid_email(username):
             email = username
-            username = self.user_name_from_email(username)
+            username = AuthHelper.user_name_from_email(username)
 
         try:
             user = get_user_model().objects.create_user(username, password=password, email=email)
@@ -137,21 +138,3 @@ class RegisterView(JSONResponseMixin, View):
             log.warning('[RegisterView] user {} already exists'.format(username))
             return self.render_to_json_response(context, HttpResponseBadRequest)
 
-    @staticmethod
-    def is_valid_email(email):
-        try:
-            EmailValidator()(email)
-            return True
-        except ValidationError:
-            return False
-
-    @staticmethod
-    def user_name_from_email(email, max_len=30):
-        if not email:
-            return
-        if len(email) < max_len:
-            return email
-        name = email.split('@')[0]
-        if len(name) < max_len:
-            return name
-        return email[:max_len]
