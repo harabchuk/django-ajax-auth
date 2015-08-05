@@ -64,7 +64,7 @@ class LoginView(JSONResponseMixin, View):
         if not username:
             log.warning('[LoginView] username is empty')
 
-        normalized_username = AuthHelper.normalize_username(username)
+        normalized_username = AuthHelper.normalize(username)
 
         user = authenticate(username=normalized_username, password=password)
         if user is not None:
@@ -120,9 +120,9 @@ class RegisterView(JSONResponseMixin, View):
             return self.render_to_json_response(context, HttpResponseBadRequest)
 
         email = None
-        if AuthHelper.is_valid_email(username):
+        if AuthHelper.is_email(username):
             email = username
-            username = AuthHelper.user_name_from_email(username)
+            username = AuthHelper.truncate(username)
 
         try:
             user = get_user_model().objects.create_user(username, password=password, email=email)
