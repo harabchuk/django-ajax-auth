@@ -130,10 +130,10 @@ class RegisterView(JSONResponseMixin, View):
         try:
             user = get_user_model().objects.create_user(username, password=password, email=email)
             user = authenticate(username=username, password=password)
+            registration_done.send(sender=self.__class__, post=self.request.POST, user=user)
             login(self.request, user)
             context['success'] = True
             log.debug('[RegisterView] registered user {} successfully'.format(username))
-            registration_done.send(sender=self.__class__, post=self.request.POST)
             return self.render_to_json_response(context)
         except IntegrityError:
             # Return an 'invalid user' error message.
