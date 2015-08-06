@@ -28,7 +28,9 @@ $.post("ajax_auth/register/", $(form).serialize(),
       });
 ```
 
-To save additional fields into your Profile model or similar you may defile a signal handler in handlers.py
+To save additional fields into your Profile model you may define a signal handler.
+
+handlers.py
 ```
 from ajax_auth.signals import registration_done
 from django.dispatch import receiver
