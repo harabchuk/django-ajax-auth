@@ -1,1 +1,1 @@
-__author__ = 'amenon'
+default_app_config = 'ajax_auth_test.app.AjaxAuthTestConfig'

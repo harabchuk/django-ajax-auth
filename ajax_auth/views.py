@@ -6,10 +6,13 @@ from django.http import HttpResponse, HttpResponseForbidden, HttpResponseBadRequ
 from django.views.generic import View
 from django.utils.translation import ugettext_lazy as _
 from .services import AuthHelper
+from .signals import registration_done
 
 import logging
 
 log = logging.getLogger(__name__)
+
+
 
 
 try:
@@ -130,6 +133,7 @@ class RegisterView(JSONResponseMixin, View):
             login(self.request, user)
             context['success'] = True
             log.debug('[RegisterView] registered user {} successfully'.format(username))
+            registration_done.send(sender=self.__class__, post=self.request.POST)
             return self.render_to_json_response(context)
         except IntegrityError:
             # Return an 'invalid user' error message.
