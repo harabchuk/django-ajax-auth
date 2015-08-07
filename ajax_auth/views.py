@@ -4,7 +4,7 @@ from django.db import IntegrityError
 
 from django.http import HttpResponse, HttpResponseForbidden, HttpResponseBadRequest
 from django.views.generic import View
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext as _
 from .services import AuthHelper
 from .signals import registration_done
 
