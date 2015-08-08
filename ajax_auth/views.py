@@ -1,19 +1,17 @@
 import json
+import logging
+
 from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
-
-from django.http import HttpResponse, HttpResponseForbidden, HttpResponseBadRequest
+from django.http import HttpResponse
 from django.views.generic import View
 from django.utils.translation import ugettext as _
+
 from .services import AuthHelper
 from .signals import registration_done
 
-import logging
 
 log = logging.getLogger(__name__)
-
-
-
 
 try:
     # Django 1.5 and higher supports overriding the default User model
@@ -51,6 +49,20 @@ class JSONResponseMixin(object):
         """
         return json.dumps(context)
 
+    def success_json(self, context=None):
+        if not context:
+            context = {}
+        context['success'] = True
+        return self.render_to_json_response(context)
+
+    def error_json(self, context=None, error_msg=None):
+        if not context:
+            context = {}
+        context['success'] = False
+        if error_msg:
+            context['error_msg'] = error_msg
+        return self.render_to_json_response(context)
+
 
 class LoginView(JSONResponseMixin, View):
     """
@@ -73,18 +85,15 @@ class LoginView(JSONResponseMixin, View):
         if user is not None:
             if user.is_active:
                 login(self.request, user)
-                context['success'] = True
-                return self.render_to_json_response(context)
+                return self.success_json(context)
             else:
                 # Return a 'disabled account' error message
-                context['success'] = False
-                context['error_msg'] = _('User account has been disabled')
+                error_msg = _('User account has been disabled')
         else:
             # Return an 'invalid login' error message.
-            context['success'] = False
-            context['error_msg'] = _('Invalid username/password')
+            error_msg = _('Invalid username/password')
 
-        return self.render_to_json_response(context, HttpResponseForbidden)
+        return self.error_json(error_msg=error_msg)
 
 
 class LogoutView(JSONResponseMixin, View):
@@ -93,9 +102,8 @@ class LogoutView(JSONResponseMixin, View):
     """
 
     def post(self, *args, **kwargs):
-
         logout(self.request)
-        return self.render_to_json_response({'success': True})
+        return self.success_json()
 
 
 class RegisterView(JSONResponseMixin, View):
@@ -114,16 +122,12 @@ class RegisterView(JSONResponseMixin, View):
         password_confirm = self.request.POST.get('password_confirm')
 
         if not username:
-            context['success'] = False
-            context['error_msg'] = _('User name is empty')
             log.error('[RegisterView] username is empty')
-            return self.render_to_json_response(context, HttpResponseBadRequest)
+            return self.error_json(error_msg=_('User name is empty'))
 
         if password != password_confirm:
-            context['success'] = False
-            context['error_msg'] = _('Password does not match the confirm password')
             log.debug('[RegisterView] passwords don''t match')
-            return self.render_to_json_response(context, HttpResponseBadRequest)
+            return self.error_json(error_msg=_('Password does not match the confirm password'))
 
         email = None
         if AuthHelper.is_email(username):
@@ -135,18 +139,12 @@ class RegisterView(JSONResponseMixin, View):
             user = authenticate(username=username, password=password)
             registration_done.send(sender=self.__class__, post=self.request.POST, user=user)
             login(self.request, user)
-            context['success'] = True
             log.debug('[RegisterView] registered user {} successfully'.format(username))
-            return self.render_to_json_response(context)
+            return self.success_json(context)
         except IntegrityError:
-            # Return an 'invalid user' error message.
-            context['success'] = False
-            context['error_msg'] = _('User already exists')
             log.warning('[RegisterView] user {} already exists'.format(username))
-            return self.render_to_json_response(context, HttpResponseBadRequest)
+            return self.error_json(error_msg=_('User already exists'))
         except Exception, e:
-            context['success'] = False
-            context['error_msg'] = _('Error while registering user')
-            log.exception('[RegisterView] erroк while creating user "{}". Error message:{}'.format(username, e.message))
-            return self.render_to_json_response(context, HttpResponseBadRequest)
+            log.exception('[RegisterView] error while creating user "{}". Error message:{}'.format(username, e.message))
+            return self.error_json(error_msg=_('Error while registering user'))
 
