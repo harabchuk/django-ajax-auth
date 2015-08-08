@@ -114,7 +114,10 @@ class RegisterView(JSONResponseMixin, View):
         password_confirm = self.request.POST.get('password_confirm')
 
         if not username:
-            log.warning('[RegisterView] username is empty')
+            context['success'] = False
+            context['error_msg'] = _('User name is empty')
+            log.error('[RegisterView] username is empty')
+            return self.render_to_json_response(context, HttpResponseBadRequest)
 
         if password != password_confirm:
             context['success'] = False
@@ -140,5 +143,10 @@ class RegisterView(JSONResponseMixin, View):
             context['success'] = False
             context['error_msg'] = _('User already exists')
             log.warning('[RegisterView] user {} already exists'.format(username))
+            return self.render_to_json_response(context, HttpResponseBadRequest)
+        except Exception, e:
+            context['success'] = False
+            context['error_msg'] = _('Error while registering user')
+            log.exception('[RegisterView] erroк while creating user "{}". Error message:{}'.format(username, e.message))
             return self.render_to_json_response(context, HttpResponseBadRequest)
 

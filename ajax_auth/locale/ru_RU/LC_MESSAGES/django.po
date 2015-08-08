@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-08-07 08:25+0300\n"
+"POT-Creation-Date: 2015-08-08 20:00+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -25,10 +25,18 @@ msgstr "Учетная запись заблокирована"
 msgid "Invalid username/password"
 msgstr "Неверное имя пользователя или или пароль"
 
-#: views.py:121
+#: views.py:118
+msgid "User name is empty"
+msgstr "Не задано имя пользователя"
+
+#: views.py:124
 msgid "Password does not match the confirm password"
 msgstr "Пароли не совпадают"
 
-#: views.py:141
+#: views.py:144
 msgid "User already exists"
 msgstr "Пользователь с таким email уже существует"
+
+#: views.py:149
+msgid "Error while registering user"
+msgstr "Ошибка при регистрации пользователя"
